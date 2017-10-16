@@ -59,43 +59,6 @@ void AMyTile::OnEndCursor(class UPrimitiveComponent* OtherComponent)
 	bIsCursorTarget = false;
 }
 
-bool AMyTile::IsTileAdjacentToPath(AMyTile* tile)
-{
-	if (AUnitPawn::CurrentPath.Num() == 0)
-	{
-		return false;
-	}
-	AMyTile* lastTile = AUnitPawn::CurrentPath.Last();
-	for (int j = 0; j < 4; j++)
-	{
-
-		FVector Start;
-		if (j == 0)
-		{
-			Start = lastTile->GetActorLocation() + FVector(lastTile->tileSize, 0, 0);
-		}
-		else if (j == 1)
-		{
-			Start = lastTile->GetActorLocation() + FVector(-lastTile->tileSize, 0, 0);
-		}
-		else if (j == 2)
-		{
-			Start = lastTile->GetActorLocation() + FVector(0, lastTile->tileSize, 0);
-		}
-		else if (j == 3)
-		{
-			Start = lastTile->GetActorLocation() + FVector(0, -lastTile->tileSize, 0);
-		}
-
-		if (tile->GetActorLocation().X == Start.X && tile->GetActorLocation().Y == Start.Y)
-		{
-
-			return true;
-		}
-	}
-	return false;
-}
-
 void AMyTile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -146,80 +109,91 @@ void AMyTile::Tick(float DeltaTime)
 					{
 
 						//Find out if the tile the cursorPawn is over is one of the tiles in the one of four adjacent spaces of the lastTile in the currentpath
-						bool isAdjacent = IsTileAdjacentToPath(this);
-						
-            
-                        if (isAdjacent)
+						bool bAdjacentTile = false;
+						AMyTile* lastTile = AUnitPawn::CurrentPath.Last();
+						for (int j = 0; j < 4; j++)
 						{
-                            int32 moveCost = *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(this->TileTypeEnum);
-                            bool bCanPass = true;
-
-                            if (this->bIsOccupied)
-                            {
-                                if (AUnitPawn::GetUnitPawnAt(this)->Faction == EFactionEnum::EF_Enemy && AUnitPawn::SelectedUnitPawn->Faction != EFactionEnum::EF_Enemy
-                                    || AUnitPawn::GetUnitPawnAt(this)->Faction != EFactionEnum::EF_Enemy && AUnitPawn::SelectedUnitPawn->Faction == EFactionEnum::EF_Enemy)
-                                {
-                                    bCanPass = false;
-                                }
-                            }
-							if (this->TileTypeEnum == ETileTypeEnum::ET_Impassable)
+							
+							FVector Start;
+							if (j == 0)
 							{
-								bCanPass = false;
+								Start = lastTile->GetActorLocation() + FVector(lastTile->tileSize, 0, 0);
+							}
+							else if (j == 1)
+							{
+								Start = lastTile->GetActorLocation() + FVector(-lastTile->tileSize, 0, 0);
+							}
+							else if (j == 2)
+							{
+								Start = lastTile->GetActorLocation() + FVector(0, lastTile->tileSize, 0);
+							}
+							else if (j == 3)
+							{
+								Start = lastTile->GetActorLocation() + FVector(0, -lastTile->tileSize, 0);
 							}
 
-							/*
-							if (this->TileTypeEnum == ETileTypeEnum::ET_Chasm && !AUnitPawn::GetUnitPawnAt(this)->CurrentClass->bCanFly)
-							{
-								bCanPass = false;
-							}
-							*/
-
-                            /*
-                            moveCost < 0 means that the class can't access the tile
-                            moveCost = 0 means that the tile type isn't accounted for in unit class
-                            */
-                            if (bCanPass && moveCost > 0)
+                            if ( this->GetActorLocation().X == Start.X && GetActorLocation().Y == Start.Y)
                             {
-                                int32 sumCost = 0;
-                                //Check and see if the total cost is greater than available move
-                                for (int k = 0; k < AUnitPawn::CurrentPath.Num(); k++)
+                                
+                                bAdjacentTile = true;
+            
+                                
+                                int32 moveCost = *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(this->TileTypeEnum);
+                                bool bCanPass = true;
+
+                                if (this->bIsOccupied)
                                 {
-                                    sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(AUnitPawn::CurrentPath[k]->TileTypeEnum);
+                                    if (AUnitPawn::GetUnitPawnAt(this)->Faction == EFactionEnum::EF_Enemy && AUnitPawn::SelectedUnitPawn->Faction != EFactionEnum::EF_Enemy
+                                        || AUnitPawn::GetUnitPawnAt(this)->Faction != EFactionEnum::EF_Enemy && AUnitPawn::SelectedUnitPawn->Faction == EFactionEnum::EF_Enemy)
+                                    {
+                                        bCanPass = false;
+                                    }
                                 }
-                                sumCost += moveCost;
-                                if (sumCost <= AUnitPawn::SelectedUnitPawn->GetTotalMovement())
+                                /*
+                                moveCost < 0 means that the class can't access the tile
+                                moveCost = 0 means that the tile type isn't accounted for in unit class
+                                */
+                                if (bCanPass && moveCost > 0)
                                 {
-                                    AUnitPawn::CurrentPath.Add(this);
+                                    int32 sumCost = 0;
+                                    //Check and see if the total cost is greater than available move
+                                    for (int k = 0; k < AUnitPawn::CurrentPath.Num(); k++)
+                                    {
+                                        sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(AUnitPawn::CurrentPath[k]->TileTypeEnum);
+                                    }
+                                    sumCost += moveCost;
+                                    if (sumCost <= AUnitPawn::SelectedUnitPawn->GetTotalMovement())
+                                    {
+                                        AUnitPawn::CurrentPath.Add(this);
                                         
-                                }
-                                else
-                                {
-									if (this != AUnitPawn::SelectedUnitPawn->currentLocation)
-									{
-										TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
-										if (newPath.Num() > 0)
+                                    }
+                                    else
+                                    {
+										if (this != AUnitPawn::SelectedUnitPawn->currentLocation)
 										{
-											newPath.RemoveAt(0); //We don't need the base tile in the current path
+											TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
+											if (newPath.Num() > 0)
+											{
+												newPath.RemoveAt(0); //We don't need the base tile in the current path
+											}
+											AUnitPawn::CurrentPath = newPath;
+											AUnitPawn::CurrentPath.Add(this);
 										}
-										AUnitPawn::CurrentPath = newPath;
-										AUnitPawn::CurrentPath.Add(this);
-									}
-									else
-									{
-										AUnitPawn::CurrentPath.Empty();
-									}
+										else
+										{
+											AUnitPawn::CurrentPath.Empty();
+										}
+                                    }
                                 }
-                            }
                                         
-                            break;
-                            
+                                break;
+                            }
                         }
 								
-						else
+						if (!bAdjacentTile)
 						{
 							if (this != AUnitPawn::SelectedUnitPawn->currentLocation)
 							{
-								AUnitPawn::CurrentPath.Empty();
 								TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
 								if (newPath.Num() > 0)
 								{

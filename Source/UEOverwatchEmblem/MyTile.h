@@ -93,7 +93,6 @@ public:
 	AMyTile(const FObjectInitializer& ObjectInitializer);
 
 	void BeginPlay() override;
-	static bool IsTileAdjacentToPath(AMyTile* tile);
 	UFUNCTION()
 		void OnBeginCursor(class UPrimitiveComponent* OtherComponent);
 	UFUNCTION()

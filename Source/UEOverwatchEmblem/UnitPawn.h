@@ -55,29 +55,20 @@
 	- Storing buffs and debuffs applied to the correct stat type with an explanation why 
 		buff/debuff is applied.
 
-	- Ultimate rules
+	- Ultimate type
 	- Ultimate charge cap
 	- Current Ultimate charge
 
 	- Faction
 	- Faction Color
 
-	- Potrait Sprite (probably just the face)
-	- Map Sprite 
+	- Potrait Sprite
+	- Map Sprite (probably just the face)
 	- Character Model (probably just face but might just make it complete for special characters)
 
 	- Inventories slots 1-5
 	- Equipped weapon
 	- Tile character is currently under
-
-	- I need a list of the current actions the player can make a the selected tile
-		-Wait is always available
-		-Shove to move an ally if adjecent to an ally
-		-Items to equip/use
-		-Attack depends on weapon range of all weapons - goes to attack menu mode
-		-Certain skills might be an action
-		-A character may interactive if under an event tile
-		-Trade is available if adjacent to ally
 */
 #pragma once
 
@@ -113,7 +104,7 @@ enum class EStatTypeEnum : uint8
 	ES_Dodge			UMETA(DisplayName = "Dodge")
 };
 
-USTRUCT(BlueprintType)
+USTRUCT() 
 struct FBuffStruct 
 { 
 	GENERATED_USTRUCT_BODY() 
@@ -161,7 +152,7 @@ struct FBuffStruct
 	
 };
 
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FMoveRangeStruct
 {
 	GENERATED_USTRUCT_BODY()
@@ -227,10 +218,8 @@ class UEOVERWATCHEMBLEM_API AUnitPawn : public APawn
 	GENERATED_BODY()
 
 public:
-	bool isAtDestination;
 	static AUnitPawn* SelectedUnitPawn;
 	static TArray<AMyTile*> CurrentPath;
-	TArray<FString> ListOfActions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Properties)
 		FString name;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Properties)
@@ -433,9 +422,6 @@ public:
 	
 	// Have a method to quickly get a unitpawn at the specified tile
 	static AUnitPawn* GetUnitPawnAt(AMyTile* tile);
-
-	// Upon reaching the action menu, run through all the possible actions the character can do
-	void BuildActionList();
 
 	// Reset for when the player can travel a new path.
 	void ResetMoveCount();

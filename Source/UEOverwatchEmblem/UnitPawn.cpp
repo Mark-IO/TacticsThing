@@ -17,18 +17,19 @@ AUnitPawn::AUnitPawn()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Origin = CreateDefaultSubobject<UBoxComponent>(TEXT("Origin"));
+	Origin->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	RootComponent = Origin;
 
 	mapSprite = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("MapFlipBook"));
-	mapSprite->SetupAttachment(RootComponent);
+	mapSprite->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	mapSprite->SetRelativeLocation(FVector::ZeroVector);
 
 	portraitSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("PortraitSprite"));
-	portraitSprite->SetupAttachment(RootComponent);
+	portraitSprite->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	portraitSprite->SetRelativeLocation(FVector::ZeroVector);
 
 	characterModel = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterModel"));
-	characterModel->SetupAttachment(RootComponent);
+	characterModel->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	characterModel->SetRelativeLocation(FVector::ZeroVector);
 
 	items.SetNum(5, false);
@@ -140,42 +141,8 @@ AUnitPawn* AUnitPawn::GetUnitPawnAt(AMyTile* tile)
 			}
 
 		}
-		return nullptr;
 	}
 	return nullptr;	
-}
-
-void AUnitPawn::BuildActionList()
-{
-	bool canUseWeapon = false;
-	bool hasItem = false;
-	// delete the previous list as some actions are location dependant
-	AUnitPawn::SelectedUnitPawn->ListOfActions.Empty();
-
-	//Run through the selected character's inventory, any items in their inventory adds the "item" command
-	//Add attack if any weapon the character has in their inventory can reach an enemy
-
-	for (int i = 0; i < AUnitPawn::SelectedUnitPawn->items.Num(); i++)
-	{
-		if (AUnitPawn::SelectedUnitPawn->items[i] != NULL && AUnitPawn::SelectedUnitPawn->items[i]->TypeEnum != ETypeEnum::ET_Empty)
-		{
-			hasItem = true; 
-			//AUnitPawn::SelectedUnitPawn->ListOfActions.AddUnique("Items");
-		}
-	}
-
-	//Check if any allies are adjacent to the selected character, as that enables trading/shoving if that's available
-
-
-	if (hasItem)
-	{
-		AUnitPawn::SelectedUnitPawn->ListOfActions.Add("Item");
-	}
-	//The player can always wait at a location
-
-	AUnitPawn::SelectedUnitPawn->ListOfActions.Add("Wait");
-
-
 }
 
 void AUnitPawn::ResetMoveCount()
@@ -251,7 +218,6 @@ void AUnitPawn::Tick(float DeltaTime)
 	{
 		if (moveCount < AUnitPawn::CurrentPath.Num())
 		{
-			isAtDestination = false;
 			FVector2D Location2D = FVector2D(AUnitPawn::SelectedUnitPawn->GetActorLocation());
 			FVector2D Destination = FMath::Vector2DInterpConstantTo(Location2D, FVector2D(AUnitPawn::CurrentPath[moveCount]->GetActorLocation()), DeltaTime, 1000);
 			AUnitPawn::SelectedUnitPawn->SetActorLocation(FVector(Destination, this->GetActorLocation().Z));
@@ -262,7 +228,7 @@ void AUnitPawn::Tick(float DeltaTime)
 		}
 		else
 		{
-			isAtDestination = true;//Give the signal to summon the menu and enable controls
+			//Give the signal to summon the menu and enable controls
 		}
 	}
 }

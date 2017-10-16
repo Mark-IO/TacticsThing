@@ -29,7 +29,7 @@ AItem::AItem()
 	bHitDefOrRes = true;		//Hits defense
 
 	Sprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Sprite"));
-	Sprite->SetupAttachment(RootComponent);
+	Sprite->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 // Called when the game starts or when spawned

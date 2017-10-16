@@ -46,17 +46,6 @@ void APlayerCursor::ProcessConfirm()
 		ACursorActor* cursor = Cast<ACursorActor>(AcknowledgedPawn);
 		if (cursor)
 		{
-			FVector2D Destination = FVector2D(cursor->CurrentTile->GetActorLocation());
-			FVector2D Current = FVector2D(cursor->GetActorLocation());
-
-			/*
-			if (!(Current - Destination).IsNearlyZero())
-			{
-				APlayerCursor::ProcessConfirm();
-				
-			}
-			*/
-
 			if (state->GameplayState == EGameplayStateEnum::EG_BaseMenu)
 			{
 			
@@ -95,7 +84,7 @@ void APlayerCursor::ProcessConfirm()
 				{
 					state->PreviousStates.Push(state->GameplayState);
 					state->GameplayState = EGameplayStateEnum::EG_ActionMenu;
-					AUnitPawn::SelectedUnitPawn->BuildActionList();
+					
 				}
 			}
 			
@@ -112,7 +101,7 @@ void APlayerCursor::ProcessCancel()
 	*/
 	AMapGameStateBase* state = Cast<AMapGameStateBase>(GetWorld()->GetGameState());
 
-	if (state->PreviousStates.Num() > 0)
+	if (state->PreviousStates.Num() != 0)
 	{
 		state->GameplayState = state->PreviousStates.Pop();
 		if (state->GameplayState == EGameplayStateEnum::EG_BaseMenu)
@@ -122,14 +111,13 @@ void APlayerCursor::ProcessCancel()
 		}
 		if (state->GameplayState == EGameplayStateEnum::EG_MoveMenu)
 		{
-			// return the selected pawn to its original location
 			FVector desiredLocation = AUnitPawn::SelectedUnitPawn->currentLocation->GetActorLocation() + FVector(0, 0, AUnitPawn::SelectedUnitPawn->GetActorLocation().Z);
 			AUnitPawn::SelectedUnitPawn->SetActorLocation(desiredLocation);
 			AUnitPawn::SelectedUnitPawn->ResetMoveCount();
 		}
 		if (state->GameplayState == EGameplayStateEnum::EG_ActionMenu)
 		{
-			//Hide the action menu
+
 		}
 	}
 }

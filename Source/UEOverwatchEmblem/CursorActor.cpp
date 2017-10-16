@@ -19,23 +19,23 @@ ACursorActor::ACursorActor()
 
 	
 	ArrowComponent = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("ArrowComponent"));
-	ArrowComponent->SetupAttachment(RootComponent);
+	ArrowComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	UpperLeftComp = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("UpperLeftComponent"));
-	UpperLeftComp->SetupAttachment(RootComponent);
+	UpperLeftComp->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	UpperRightComp = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("UpperRightComponent"));
-	UpperRightComp->SetupAttachment(RootComponent);
+	UpperRightComp->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	LowerLeftComp = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("LowerLeftComponent"));
-	LowerLeftComp->SetupAttachment(RootComponent);
+	LowerLeftComp->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	LowerRightComp = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("LowerRightComponent"));
-	LowerRightComp->SetupAttachment(RootComponent);
+	LowerRightComp->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->AttachTo(CameraBoom, USpringArmComponent::SocketName);
@@ -48,7 +48,6 @@ ACursorActor::ACursorActor()
 // Called when the game starts or when spawned
 void ACursorActor::BeginPlay()
 {
-	
 	Super::BeginPlay();
 	GetWorld()->GetFirstPlayerController()->Possess(this);
 
@@ -221,69 +220,46 @@ void ACursorActor::MoveUp(float Value)
 						{
 							if (CurrentTile == AUnitPawn::SelectedUnitPawn->moveRange[i].GetTile())
 							{
-								bool isAdjacent = AMyTile::IsTileAdjacentToPath(CurrentTile);
-								if (isAdjacent)
+								if (AUnitPawn::CurrentPath.Num() == 0 && CurrentTile != AUnitPawn::SelectedUnitPawn->currentLocation)
 								{
-									if (AUnitPawn::CurrentPath.Num() == 0 && CurrentTile != AUnitPawn::SelectedUnitPawn->currentLocation)
+									AUnitPawn::CurrentPath.Add(CurrentTile);
+									break;
+								}
+								else if (AUnitPawn::CurrentPath.Num() <= 1 && CurrentTile == AUnitPawn::SelectedUnitPawn->currentLocation
+									|| AUnitPawn::CurrentPath.Num() > 1 && CurrentTile == AUnitPawn::CurrentPath.Last(1))
+								{
+									AUnitPawn::CurrentPath.Pop();
+									break;
+								}
+								else
+								{
+									int32 sumCost = 0;
+									//Check and see if the total cost is greater than available move
+									for (int j = 0; j < AUnitPawn::CurrentPath.Num(); j++)
+									{
+										sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(AUnitPawn::CurrentPath[j]->TileTypeEnum);
+									}
+									sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(CurrentTile->TileTypeEnum);
+									if (sumCost <= AUnitPawn::SelectedUnitPawn->GetTotalMovement())
 									{
 										AUnitPawn::CurrentPath.Add(CurrentTile);
-										break;
-									}
-									else if (AUnitPawn::CurrentPath.Num() <= 1 && CurrentTile == AUnitPawn::SelectedUnitPawn->currentLocation
-										|| AUnitPawn::CurrentPath.Num() > 1 && CurrentTile == AUnitPawn::CurrentPath.Last(1))
-									{
-										AUnitPawn::CurrentPath.Pop();
-										break;
 									}
 									else
 									{
-										int32 sumCost = 0;
-										//Check and see if the total cost is greater than available move
-										for (int j = 0; j < AUnitPawn::CurrentPath.Num(); j++)
+										if (CurrentTile != AUnitPawn::SelectedUnitPawn->currentLocation)
 										{
-											sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(AUnitPawn::CurrentPath[j]->TileTypeEnum);
-										}
-										sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(CurrentTile->TileTypeEnum);
-										if (sumCost <= AUnitPawn::SelectedUnitPawn->GetTotalMovement())
-										{
+											TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
+											if (newPath.Num() > 0)
+											{
+												newPath.RemoveAt(0); //We don't need the base tile in the current path
+											}
+											AUnitPawn::CurrentPath = newPath;
 											AUnitPawn::CurrentPath.Add(CurrentTile);
 										}
 										else
 										{
-											if (CurrentTile != AUnitPawn::SelectedUnitPawn->currentLocation)
-											{
-												TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
-												if (newPath.Num() > 0)
-												{
-													newPath.RemoveAt(0); //We don't need the base tile in the current path
-												}
-												AUnitPawn::CurrentPath = newPath;
-												AUnitPawn::CurrentPath.Add(CurrentTile);
-											}
-											else
-											{
-												AUnitPawn::CurrentPath.Empty();
-											}
+											AUnitPawn::CurrentPath.Empty();
 										}
-									}
-								}
-								else
-								{
-									if (CurrentTile != AUnitPawn::SelectedUnitPawn->currentLocation)
-									{
-										AUnitPawn::CurrentPath.Empty();
-										TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
-										if (newPath.Num() > 0)
-										{
-											newPath.RemoveAt(0); //We don't need the base tile in the current path
-										}
-
-										AUnitPawn::CurrentPath = newPath;
-										AUnitPawn::CurrentPath.Add(CurrentTile);
-									}
-									else
-									{
-										AUnitPawn::CurrentPath.Empty();
 									}
 								}
 							}
@@ -345,50 +321,31 @@ void ACursorActor::MoveRight(float Value)
 						{
 							if (CurrentTile == AUnitPawn::SelectedUnitPawn->moveRange[i].GetTile())
 							{
-								bool isAdjacent = AMyTile::IsTileAdjacentToPath(CurrentTile);
-
-								if (isAdjacent)
+								if (AUnitPawn::CurrentPath.Num() == 0)
 								{
-									if (AUnitPawn::CurrentPath.Num() == 0)
-									{
-										AUnitPawn::CurrentPath.Add(CurrentTile);
-										break;
-									}
-									else if (AUnitPawn::CurrentPath.Num() == 1 && CurrentTile == AUnitPawn::SelectedUnitPawn->currentLocation
-										|| AUnitPawn::CurrentPath.Num() > 1 && CurrentTile == AUnitPawn::CurrentPath.Last(1))
-									{
-										AUnitPawn::CurrentPath.Pop();
-										break;
-									}
-									else
-									{
-										int32 sumCost = 0;
-										//Check and see if the total cost is greater than available move
-										for (int j = 0; j < AUnitPawn::CurrentPath.Num(); j++)
-										{
-											sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(AUnitPawn::CurrentPath[j]->TileTypeEnum);
-										}
-										sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(CurrentTile->TileTypeEnum);
-										if (sumCost <= AUnitPawn::SelectedUnitPawn->GetTotalMovement())
-										{
-											AUnitPawn::CurrentPath.Add(CurrentTile);
-										}
-										else
-										{
-											AUnitPawn::CurrentPath.Empty();
-											TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
-											if (newPath.Num() > 0)
-											{
-												newPath.RemoveAt(0); //We don't need the base tile in the current path
-											}
-											AUnitPawn::CurrentPath = newPath;
-											AUnitPawn::CurrentPath.Add(CurrentTile);
-										}
-									}
+									AUnitPawn::CurrentPath.Add(CurrentTile);
+									break;
+								}
+								else if (AUnitPawn::CurrentPath.Num() == 1 && CurrentTile == AUnitPawn::SelectedUnitPawn->currentLocation
+									|| AUnitPawn::CurrentPath.Num() > 1 && CurrentTile == AUnitPawn::CurrentPath.Last(1))
+								{
+									AUnitPawn::CurrentPath.Pop();
+									break;
 								}
 								else
 								{
-									if (CurrentTile != AUnitPawn::SelectedUnitPawn->currentLocation)
+									int32 sumCost = 0;
+									//Check and see if the total cost is greater than available move
+									for (int j = 0; j < AUnitPawn::CurrentPath.Num(); j++)
+									{
+										sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(AUnitPawn::CurrentPath[j]->TileTypeEnum);
+									}
+									sumCost += *AUnitPawn::SelectedUnitPawn->CurrentClass->CostOfMove.Find(CurrentTile->TileTypeEnum);
+									if (sumCost <= AUnitPawn::SelectedUnitPawn->GetTotalMovement())
+									{
+										AUnitPawn::CurrentPath.Add(CurrentTile);
+									}
+									else
 									{
 										AUnitPawn::CurrentPath.Empty();
 										TArray<AMyTile*> newPath = AUnitPawn::SelectedUnitPawn->moveRange[i].GetShortestPath();
@@ -396,13 +353,8 @@ void ACursorActor::MoveRight(float Value)
 										{
 											newPath.RemoveAt(0); //We don't need the base tile in the current path
 										}
-
 										AUnitPawn::CurrentPath = newPath;
 										AUnitPawn::CurrentPath.Add(CurrentTile);
-									}
-									else
-									{
-										AUnitPawn::CurrentPath.Empty();
 									}
 								}
 							}

@@ -44,7 +44,6 @@ enum class ETypeEnum : uint8
 	ET_Bow				UMETA(DisplayName = "Bow"),
 	ET_Gun				UMETA(DisplayName = "Gun"),
 	ET_Breath			UMETA(DisplayName = "Breath"),
-	ET_Fist				UMETA(DisplayName = "Fist"),
 	ET_Empty			UMETA(DisplayName = "Empty")
 };
 UENUM(BlueprintType)		//"BlueprintType" is essential to include

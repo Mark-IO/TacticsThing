@@ -16,9 +16,6 @@
 	When the cursor is over a character:
 		- Show possible movement range with minimum number of moves to reach said square
 
-	If I choose to implement the action menu here, it should be noted that keeping the list in consistent order
-		is more important than the number of times the list is iterated.
-
 	On combat preview:
 		- Relevant stat between defense and resistance, depending on the opponent's weapon
 		- How much damage will be done, hit, crit, dodge, avoid, and skills.
